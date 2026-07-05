@@ -25,7 +25,7 @@ pipeline {
                   aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
                   docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-                  docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+                  docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$IMAGE_NAME:latest
  
                   docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
                   docker push $ECR_REGISTRY/$IMAGE_NAME:latest 
