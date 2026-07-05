@@ -5,6 +5,9 @@ pipeline {
         IMAGE_NAME  = "my-repo"
         IMAGE_TAG    = "${BUILD_NUMBER}"
         ECR_REGISTRY = "883999921903.dkr.ecr.ap-southeast-1.amazonaws.com"
+        AWS_REGION  = "ap-southeast-1"
+        EKS_CLUSTER = "test-cluster"
+        KUBECONFIG  = "/var/jenkins_home/.kube/config"
     }
 
     stages {
@@ -22,7 +25,7 @@ pipeline {
            steps {
                 
                 sh '''
-                  aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+                  aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
                   docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
                   docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$IMAGE_NAME:latest
