@@ -2,42 +2,37 @@ pipeline {
     agent { label 'worker-node' }
 
     environment {
-        DOCKER_IMAGE  = "neeraj91/flask-app"
-        DOCKER_TAG    = "${BUILD_NUMBER}"
-        SONAR_PROJECT = "flask-app"
+        IMAGE_NAME  = "my-repo"
+        IMAGE_TAG    = "${BUILD_NUMBER}"
+        ECR_REGISTRY = "883999921903.dkr.ecr.ap-southeast-1.amazonaws.com"
     }
 
     stages {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
             }
         }
 
         
 
-        stage('Push to DockerHub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+        stage('Push to ECR') {
+           
+           steps {
+                
+                sh '''
+                  aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-                        docker push $DOCKER_IMAGE:$DOCKER_TAG
-
-                        docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest
-
-                        docker push $DOCKER_IMAGE:latest
-                    '''
-                }
+                  docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+                  docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+ 
+                  docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+                  docker push $ECR_REGISTRY/$IMAGE_NAME:latest 
+                 
+                 '''
+                 }
             }
-        }
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -47,19 +42,6 @@ pipeline {
     }
 
     post {
-
-        success {
-            echo "BUILD SUCCESS - Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
-            echo "SonarQube: PASSED"
-        }
-
-        unstable {
-            echo "BUILD UNSTABLE - Review OWASP and Trivy reports"
-        }
-
-        failure {
-            echo "BUILD FAILED - Check console logs"
-        }
 
         always {
             cleanWs()
